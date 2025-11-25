@@ -1,10 +1,9 @@
+import Link from 'next/link';
 import {
   FileDiff,
   LayoutList,
   ShieldCheck,
-  Sparkles,
   UploadCloud,
-  Wand2,
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -24,7 +23,7 @@ const tools = [
     status: 'Constructing',
     accent: palette.red,
     icon: FileDiff,
-    tags: [],
+    href: '/tools/pdf-diff',
   },
   {
     title: 'Timeline Builder',
@@ -33,7 +32,7 @@ const tools = [
     status: 'Constructing',
     accent: palette.green,
     icon: LayoutList,
-    tags: [],
+    href: '/tools/timeline-builder',
   },
   {
     title: 'Holocron Vault',
@@ -42,7 +41,7 @@ const tools = [
     status: 'Constructing',
     accent: palette.aqua,
     icon: ShieldCheck,
-    tags: [],
+    href: '/tools/holocron-vault',
   },
 ];
 
@@ -67,6 +66,27 @@ const principles = [
   },
 ];
 
+const dataFlow = [
+  {
+    title: 'No databases—ever',
+    description:
+      'Your work lives in local storage by default. Export it whenever you want a portable backup.',
+    accent: palette.red,
+  },
+  {
+    title: 'Portable saves',
+    description:
+      'Download a single file to recreate your session after clearing cookies or switching devices.',
+    accent: palette.yellow,
+  },
+  {
+    title: 'Offline-friendly',
+    description:
+      'Most features run without a network connection. API calls only happen when you explicitly opt in.',
+    accent: palette.forest,
+  },
+];
+
 export default function Home() {
   return (
     <div className={styles.page}>
@@ -85,37 +105,31 @@ export default function Home() {
           {tools.map((tool) => {
             const Icon = tool.icon;
             return (
-              <article
-                key={tool.title}
-                className={styles.toolCard}
-                style={{ borderColor: tool.accent }}
-              >
-                <div className={styles.toolHeader}>
-                  <div
-                    className={styles.iconWrap}
-                    style={{ backgroundColor: tool.accent }}
-                  >
-                    <Icon size={24} />
-                  </div>
-                  <div>
-                    <p
-                      className={styles.toolStatus}
-                      style={{ color: tool.accent }}
+              <Link key={tool.title} href={tool.href} className={styles.toolLink}>
+                <article
+                  className={styles.toolCard}
+                  style={{ borderColor: tool.accent }}
+                >
+                  <div className={styles.toolHeader}>
+                    <div
+                      className={styles.iconWrap}
+                      style={{ backgroundColor: tool.accent }}
                     >
-                      {tool.status}
-                    </p>
-                    <h3>{tool.title}</h3>
+                      <Icon size={24} />
+                    </div>
+                    <div>
+                      <p
+                        className={styles.toolStatus}
+                        style={{ color: tool.accent }}
+                      >
+                        {tool.status}
+                      </p>
+                      <h3>{tool.title}</h3>
+                    </div>
                   </div>
-                </div>
-                <p className={styles.toolCopy}>{tool.description}</p>
-                <div className={styles.tagRow}>
-                  {tool.tags.map((tag) => (
-                    <span key={tag} className={styles.tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </article>
+                  <p className={styles.toolCopy}>{tool.description}</p>
+                </article>
+              </Link>
             );
           })}
         </div>
@@ -144,26 +158,32 @@ export default function Home() {
           ))}
         </div>
       </section>
-      <div className={styles.heroCard}>
-        <div>
-          <p className={styles.heroCardLabel}>Data flow</p>
-          <h3>Local storage + optional exports</h3>
-          <p className={styles.heroCardCopy}>
-            Session state is cached in your browser. Need a fresh start after a
-            cookie wipe? Reload your saved file and you&apos;re back in seconds.
-          </p>
-          <div className={styles.heroBadges}>
-            <span style={{ backgroundColor: palette.red }}>No DBs</span>
-            <span style={{ backgroundColor: palette.green }}>
-              Offline-friendly
-            </span>
-            <span style={{ backgroundColor: palette.yellow }}>
-              Shareable saves
-            </span>
-          </div>
+      <section className={styles.dataFlow} id='data-flow'>
+        <div className={styles.sectionHeader}>
+          <h2>Data flow</h2>
+          <p>Local storage first, with optional exports for peace of mind.</p>
         </div>
-        <UploadCloud className={styles.heroIcon} size={88} strokeWidth={1.5} />
-      </div>
+        <div className={styles.dataGrid}>
+          {dataFlow.map((item) => (
+            <article key={item.title} className={styles.dataCard}>
+              <div
+                className={styles.dataAccent}
+                style={{ backgroundColor: item.accent }}
+              />
+              <div className={styles.dataCopy}>
+                <p className={styles.dataLabel}>Local-first</p>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </div>
+              <UploadCloud
+                className={styles.dataIcon}
+                size={42}
+                strokeWidth={1.75}
+              />
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

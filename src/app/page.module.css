@@ -200,6 +200,10 @@
   gap: 18px;
 }
 
+.toolLink {
+  text-decoration: none;
+}
+
 .toolCard {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--card-border);
@@ -210,6 +214,13 @@
   flex-direction: column;
   gap: 12px;
   box-shadow: var(--glow);
+  transition: transform 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.toolCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
 }
 
 .toolHeader {
@@ -243,21 +254,6 @@
 .toolCopy {
   color: var(--muted);
   line-height: 1.5;
-}
-
-.tagRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--card-border);
-  color: #f4fbff;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 13px;
 }
 
 .stubButton {
@@ -314,6 +310,62 @@
 
 .principleCard p {
   color: var(--muted);
+}
+
+.dataFlow {
+  max-width: 1100px;
+  margin: 60px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.dataCard {
+  position: relative;
+  padding: 18px;
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  box-shadow: var(--glow);
+}
+
+.dataAccent {
+  width: 8px;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.dataCopy h3 {
+  margin-bottom: 6px;
+}
+
+.dataCopy p {
+  color: var(--muted);
+}
+
+.dataLabel {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.dataIcon {
+  color: var(--aqua);
+  background: rgba(0, 222, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 @media (max-width: 720px) {
