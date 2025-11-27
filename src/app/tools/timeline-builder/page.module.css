@@ -490,22 +490,28 @@
   max-width: 420px;
 }
 
+.horizontalScroller {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-inline: 6px;
+}
+
 .horizontalTrack {
+  --rail-padding: clamp(70px, 12vw, 140px);
   position: relative;
   display: flex;
   gap: 32px;
   align-items: center;
-  padding: 32px 8px 40px;
-  overflow-x: auto;
-  overflow-y: visible;
+  padding: 32px var(--rail-padding) 40px;
   min-height: 800px;
+  width: max-content;
 }
 
 .horizontalLine {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
+  left: var(--rail-padding);
+  right: var(--rail-padding);
   height: 3px;
   background: linear-gradient(
     90deg,

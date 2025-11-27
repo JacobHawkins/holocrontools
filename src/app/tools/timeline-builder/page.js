@@ -599,51 +599,53 @@ export default function TimelineBuilder() {
           )}
 
           {viewMode === 'horizontal' && (
-            <div className={styles.horizontalTrack}>
-              <div className={styles.horizontalLine} />
-              {sortedEvents.map((item, index) => (
-                <div key={item.id} className={styles.horizontalStop}>
-                  <div
-                    className={styles.stopMarker}
-                    style={{
-                      borderColor: item.accent,
-                      boxShadow: `0 0 0 8px ${item.accent}14`,
-                    }}
-                  />
-                  <div
-                    className={`${styles.stopCard} ${
-                      index % 2 ? styles.stopCardBelow : styles.stopCardAbove
-                    }`}
-                    style={{
-                      borderTopColor: item.accent,
-                      '--accent': item.accent,
-                    }}
-                  >
-                    <div className={styles.previewMeta}>
-                      <span className={styles.previewDate}>
-                        {formatDate(item.date)}
-                      </span>
-                      <span
-                        className={styles.previewAccent}
-                        style={{ background: item.accent }}
-                      />
-                    </div>
-                    <h3>{item.title || 'Untitled'}</h3>
-                    <p>
-                      {item.description || 'Add details to flesh this out.'}
-                    </p>
-                    {item.image && (
-                      <div className={styles.previewImageFrame}>
-                        <img
-                          className={styles.previewImage}
-                          src={item.image}
-                          alt='Timeline visual'
+            <div className={styles.horizontalScroller}>
+              <div className={styles.horizontalTrack}>
+                <div className={styles.horizontalLine} />
+                {sortedEvents.map((item, index) => (
+                  <div key={item.id} className={styles.horizontalStop}>
+                    <div
+                      className={styles.stopMarker}
+                      style={{
+                        borderColor: item.accent,
+                        boxShadow: `0 0 0 8px ${item.accent}14`,
+                      }}
+                    />
+                    <div
+                      className={`${styles.stopCard} ${
+                        index % 2 ? styles.stopCardBelow : styles.stopCardAbove
+                      }`}
+                      style={{
+                        borderTopColor: item.accent,
+                        '--accent': item.accent,
+                      }}
+                    >
+                      <div className={styles.previewMeta}>
+                        <span className={styles.previewDate}>
+                          {formatDate(item.date)}
+                        </span>
+                        <span
+                          className={styles.previewAccent}
+                          style={{ background: item.accent }}
                         />
                       </div>
-                    )}
+                      <h3>{item.title || 'Untitled'}</h3>
+                      <p>
+                        {item.description || 'Add details to flesh this out.'}
+                      </p>
+                      {item.image && (
+                        <div className={styles.previewImageFrame}>
+                          <img
+                            className={styles.previewImage}
+                            src={item.image}
+                            alt='Timeline visual'
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
