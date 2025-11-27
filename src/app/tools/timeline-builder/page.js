@@ -2,14 +2,13 @@
 'use client';
 
 import {
-  ArrowDown,
-  ArrowUp,
   Download,
   FileUp,
   ImagePlus,
   Plus,
   RefreshCcw,
   Save,
+  Trash,
   UploadCloud,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
@@ -24,11 +23,57 @@ const viewModes = [
   { value: 'gallery', label: 'Photo gallery' },
 ];
 
+function formatDate(input) {
+  if (!input) return 'No date';
+  const date = new Date(input);
+  if (Number.isNaN(date)) return input;
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}-${day}-${year}`;
+}
+
 function createEventId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   return `event-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function AccentPicker({ value, onChange }) {
+  const activeColor = value || accentOptions[0];
+
+  return (
+    <div className={styles.accentControls}>
+      <div className={styles.colorInputRow}>
+        <input
+          type='color'
+          value={activeColor}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <span
+          className={styles.accentPreview}
+          style={{ backgroundColor: activeColor }}
+          aria-hidden
+        />
+        <span className={styles.accentValue}>{activeColor.toUpperCase()}</span>
+      </div>
+      <div className={styles.paletteRow}>
+        {accentOptions.map((color) => (
+          <button
+            key={color}
+            type='button'
+            className={`${styles.swatch} ${
+              activeColor === color ? styles.swatchSelected : ''
+            }`}
+            style={{ background: color }}
+            aria-label={`Use accent ${color}`}
+            onClick={() => onChange(color)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function TimelineBuilder() {
@@ -138,23 +183,11 @@ export default function TimelineBuilder() {
     setEvents((prev) => prev.filter((item) => item.id !== id));
   }
 
-  function moveEvent(id, direction) {
-    setEvents((prev) => {
-      const index = prev.findIndex((item) => item.id === id);
-      if (index === -1) return prev;
-      const next = [...prev];
-      const swapWith = direction === 'up' ? index - 1 : index + 1;
-      if (swapWith < 0 || swapWith >= prev.length) return prev;
-      [next[index], next[swapWith]] = [next[swapWith], next[index]];
-      return next;
-    });
-  }
-
   function exportTimeline(format) {
     if (!events.length) return;
 
     if (format === 'json') {
-      const payload = JSON.stringify(events, null, 2);
+      const payload = JSON.stringify(sortedEvents, null, 2);
       const blob = new Blob([payload], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -278,10 +311,9 @@ export default function TimelineBuilder() {
           <div className={styles.row}>
             <label className={styles.label}>
               Accent
-              <input
-                type='color'
+              <AccentPicker
                 value={draft.accent}
-                onChange={(e) => handleDraftChange('accent', e.target.value)}
+                onChange={(color) => handleDraftChange('accent', color)}
               />
             </label>
 
@@ -314,7 +346,7 @@ export default function TimelineBuilder() {
         <div className={styles.timeline}>
           <div className={styles.formHeader}>
             <h2>Timeline</h2>
-            <p>Reorder, edit, and preview your entries.</p>
+            <p>Edit and preview your entries (oldest first).</p>
           </div>
           {!events.length && (
             <div className={styles.empty}>
@@ -323,7 +355,7 @@ export default function TimelineBuilder() {
             </div>
           )}
           <div className={styles.eventList}>
-            {events.map((item, index) => (
+            {sortedEvents.map((item) => (
               <article key={item.id} className={styles.eventCard}>
                 <div
                   className={styles.eventAccent}
@@ -331,33 +363,13 @@ export default function TimelineBuilder() {
                 />
                 <div className={styles.eventContent}>
                   <div className={styles.eventControls}>
-                    <div className={styles.eventActions}>
-                      <button
-                        type='button'
-                        className={styles.circle}
-                        onClick={() => moveEvent(item.id, 'up')}
-                        aria-label='Move up'
-                        disabled={index === 0}
-                      >
-                        <ArrowUp size={16} />
-                      </button>
-                      <button
-                        type='button'
-                        className={styles.circle}
-                        onClick={() => moveEvent(item.id, 'down')}
-                        aria-label='Move down'
-                        disabled={index === events.length - 1}
-                      >
-                        <ArrowDown size={16} />
-                      </button>
-                    </div>
                     <button
                       type='button'
                       className={styles.circle}
                       onClick={() => removeEvent(item.id)}
                       aria-label='Remove'
                     >
-                      <RefreshCcw size={16} />
+                      <Trash size={16} />
                     </button>
                   </div>
                   <div className={styles.fields}>
@@ -389,11 +401,10 @@ export default function TimelineBuilder() {
                   <div className={styles.eventFooter}>
                     <label className={styles.colorLabel}>
                       Accent
-                      <input
-                        type='color'
+                      <AccentPicker
                         value={item.accent}
-                        onChange={(e) =>
-                          updateEvent(item.id, 'accent', e.target.value)
+                        onChange={(color) =>
+                          updateEvent(item.id, 'accent', color)
                         }
                       />
                     </label>
@@ -475,7 +486,7 @@ export default function TimelineBuilder() {
                   <div className={styles.previewCard}>
                     <div className={styles.previewMeta}>
                       <span className={styles.previewDate}>
-                        {item.date || 'No date'}
+                        {formatDate(item.date)}
                       </span>
                       <span
                         className={styles.previewAccent}
@@ -521,7 +532,7 @@ export default function TimelineBuilder() {
                   >
                     <div className={styles.previewMeta}>
                       <span className={styles.previewDate}>
-                        {item.date || 'No date'}
+                        {formatDate(item.date)}
                       </span>
                       <span
                         className={styles.previewAccent}
@@ -583,7 +594,7 @@ export default function TimelineBuilder() {
                     />
                     <div>
                       <h4>{item.title || 'Untitled'}</h4>
-                      <p>{item.date || 'No date'}</p>
+                      <p>{formatDate(item.date)}</p>
                     </div>
                   </figcaption>
                 </figure>
