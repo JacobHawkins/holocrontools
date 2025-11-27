@@ -11,7 +11,7 @@ const palette = {
   red: '#ff3939',
   green: '#00ce00',
   yellow: '#ffce29',
-  aqua: '#00deff',
+  blue: '#1a8bff',
   forest: '#007b4a',
 };
 
@@ -39,7 +39,7 @@ const tools = [
     description:
       'A screen to manage your saved files, import exports from other tools, and keep your local workspace tidy.',
     status: 'Constructing',
-    accent: palette.aqua,
+    accent: palette.blue,
     icon: ShieldCheck,
     href: '/tools/holocron-vault',
   },
@@ -50,7 +50,7 @@ const principles = [
     title: 'Local-first by design',
     description:
       'Everything runs in your browser. Storage is local, exports are portable, and nothing leaves your device unless you choose it.',
-    accent: palette.green,
+    accent: palette.red,
   },
   {
     title: 'Free. Free from Ads. Free from Accounts.',
@@ -62,7 +62,13 @@ const principles = [
     title: 'Ready for productivity',
     description:
       'The priority here is having the right tool for the right job. I hope to keep building tools that help you get things done, without distractions or bloat.',
-    accent: palette.aqua,
+    accent: palette.green,
+  },
+  {
+    title: 'Four-color clarity',
+    description:
+      'Inspired by the classic red, green, yellow, and blue buttons, every surface leans on a quartet of accents for fast scanning and familiarity.',
+    accent: palette.blue,
   },
 ];
 
@@ -84,6 +90,12 @@ const dataFlow = [
     description:
       'Most features run without a network connection. API calls only happen when you explicitly opt in.',
     accent: palette.forest,
+  },
+  {
+    title: 'Visual exports',
+    description:
+      'Capture what you see. Export timelines and stories as images or PDFs so the layout you pick is the layout they get.',
+    accent: palette.blue,
   },
 ];
 
