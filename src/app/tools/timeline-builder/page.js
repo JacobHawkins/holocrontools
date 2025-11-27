@@ -275,6 +275,7 @@ export default function TimelineBuilder() {
       return;
     }
 
+    const cleanup = prepareHorizontalExportLayout();
     if (!previewRef.current) return;
     setIsExportingImage(true);
     toPng(previewRef.current, {
@@ -290,9 +291,51 @@ export default function TimelineBuilder() {
       })
       .catch((error) => console.error('Failed to export preview', error))
       .finally(() => {
+        cleanup();
         setIsExportOpen(false);
         setIsExportingImage(false);
       });
+  }
+
+  function prepareHorizontalExportLayout() {
+    if (viewMode !== 'horizontal' || !previewRef.current) {
+      return () => {};
+    }
+
+    const surface = previewRef.current;
+    const scroller = surface.querySelector(`.${styles.horizontalScroller}`);
+    const track = scroller?.querySelector(`.${styles.horizontalTrack}`);
+
+    if (!scroller || !track) {
+      return () => {};
+    }
+
+    const originalSurfaceStyle = surface.getAttribute('style');
+    const originalScrollerStyle = scroller.getAttribute('style');
+
+    const contentWidth = track.scrollWidth;
+    const contentHeight = track.scrollHeight;
+
+    scroller.style.overflow = 'visible';
+    scroller.style.width = `${contentWidth}px`;
+    scroller.style.height = `${contentHeight}px`;
+
+    surface.style.width = `${contentWidth + 32}px`;
+    surface.style.height = `${contentHeight + 32}px`;
+
+    return () => {
+      if (originalSurfaceStyle) {
+        surface.setAttribute('style', originalSurfaceStyle);
+      } else {
+        surface.removeAttribute('style');
+      }
+
+      if (originalScrollerStyle) {
+        scroller.setAttribute('style', originalScrollerStyle);
+      } else {
+        scroller.removeAttribute('style');
+      }
+    };
   }
 
   function handleImport(files) {
