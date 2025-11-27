@@ -80,20 +80,7 @@ export default function TimelineBuilder() {
   const filePickerRef = useRef(null);
   const importPickerRef = useRef(null);
   const previewRef = useRef(null);
-  const [events, setEvents] = useState(() => {
-    if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return [];
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    } catch (error) {
-      console.error('Failed to parse saved timeline', error);
-    }
-    return [];
-  });
+  const [events, setEvents] = useState([]);
   const [draft, setDraft] = useState({
     title: '',
     date: '',
@@ -104,11 +91,51 @@ export default function TimelineBuilder() {
   const [viewMode, setViewMode] = useState('vertical');
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isExportingImage, setIsExportingImage] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [storageMessage, setStorageMessage] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  }, [events]);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      setIsHydrated(true);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        setEvents(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to parse saved timeline', error);
+    } finally {
+      setIsHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isHydrated) return;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      setStorageMessage('');
+    } catch (error) {
+      console.error('Failed to persist timeline', error);
+      try {
+        const lightweightEvents = events.map(({ image, ...rest }) => rest);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(lightweightEvents));
+        setStorageMessage(
+          'Storage limit reached: images will not be saved locally. Export to keep full fidelity.'
+        );
+      } catch (secondaryError) {
+        console.error('Unable to persist even without images', secondaryError);
+        setStorageMessage(
+          'Unable to save timeline locally due to storage limits. Please export to retain your data.'
+        );
+      }
+    }
+  }, [events, isHydrated]);
 
   const sortedEvents = useMemo(
     () =>
@@ -275,6 +302,16 @@ export default function TimelineBuilder() {
           />
         </div>
       </section>
+
+      {storageMessage && (
+        <div className={styles.storageWarning} role='status'>
+          <UploadCloud size={18} />
+          <div>
+            <strong>Local save limited</strong>
+            <p>{storageMessage}</p>
+          </div>
+        </div>
+      )}
 
       <section className={styles.layout}>
         <form className={styles.form} onSubmit={addEvent}>
