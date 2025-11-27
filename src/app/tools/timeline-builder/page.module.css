@@ -408,6 +408,11 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.horizontalSurface {
+  min-height: 420px;
+  padding: 22px 14px 32px;
+}
+
 .previewTrack {
   position: relative;
   display: flex;
@@ -470,10 +475,11 @@
 .horizontalTrack {
   position: relative;
   display: flex;
-  gap: 24px;
+  gap: 32px;
   align-items: center;
-  padding: 10px 6px;
+  padding: 24px 8px 28px;
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .horizontalLine {
@@ -494,9 +500,12 @@
 
 .horizontalStop {
   position: relative;
-  display: grid;
-  place-items: center;
-  min-width: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 260px;
+  min-height: 280px;
+  padding: 12px 0;
 }
 
 .stopMarker {
@@ -511,22 +520,43 @@
 
 .stopCard {
   position: absolute;
-  width: min(320px, 70vw);
+  width: min(340px, 72vw);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
+  border-top: 4px solid var(--border);
   border-radius: 12px;
   padding: 12px;
   box-shadow: var(--glow);
+  isolation: isolate;
 }
 
 .stopCardAbove {
-  bottom: calc(100% + 10px);
-  border-top: 4px solid transparent;
+  bottom: 55%;
+  transform: translateY(-10px);
 }
 
 .stopCardBelow {
-  top: calc(100% + 10px);
-  border-top: 4px solid transparent;
+  top: 55%;
+  transform: translateY(10px);
+}
+
+.stopCard::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  background: var(--accent, var(--border));
+  transform: translateX(-50%);
+}
+
+.stopCardAbove::after {
+  top: 100%;
+  height: 24px;
+}
+
+.stopCardBelow::after {
+  bottom: 100%;
+  height: 24px;
 }
 
 .galleryGrid {

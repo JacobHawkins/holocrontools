@@ -528,7 +528,10 @@ export default function TimelineBuilder() {
                     className={`${styles.stopCard} ${
                       index % 2 ? styles.stopCardBelow : styles.stopCardAbove
                     }`}
-                    style={{ borderTopColor: item.accent }}
+                    style={{
+                      borderTopColor: item.accent,
+                      '--accent': item.accent,
+                    }}
                   >
                     <div className={styles.previewMeta}>
                       <span className={styles.previewDate}>
