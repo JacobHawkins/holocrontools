@@ -12,10 +12,13 @@ import {
   UploadCloud,
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import localforage from 'localforage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 
-const STORAGE_KEY = 'holocrontools.timeline.v1';
+const METADATA_KEY = 'holocrontools.timeline.meta.v1';
+const LEGACY_STORAGE_KEY = 'holocrontools.timeline.v1';
+const IMAGE_PREFIX = 'holocrontools.timeline.image.';
 const accentOptions = ['#ff3939', '#00ce00', '#ffce29', '#1a8bff'];
 const viewModes = [
   { value: 'vertical', label: 'Top-down' },
@@ -96,45 +99,91 @@ export default function TimelineBuilder() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) {
-      setIsHydrated(true);
-      return;
-    }
 
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        setEvents(parsed);
+    let isMounted = true;
+
+    localforage.config({ name: 'holocrontools' });
+
+    const hydrate = async () => {
+      try {
+        let savedMetadata = await localforage.getItem(METADATA_KEY);
+
+        if (!Array.isArray(savedMetadata)) {
+          const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+          if (legacy) {
+            savedMetadata = JSON.parse(legacy);
+          }
+        }
+
+        if (Array.isArray(savedMetadata) && isMounted) {
+          const eventsWithImages = await Promise.all(
+            savedMetadata.map(async (item) => {
+              const storedImage = await localforage.getItem(`${IMAGE_PREFIX}${item.id}`);
+              return {
+                ...item,
+                image: storedImage || item.image || '',
+              };
+            })
+          );
+          if (isMounted) {
+            setEvents(eventsWithImages);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load saved timeline', error);
+      } finally {
+        if (isMounted) {
+          setIsHydrated(true);
+        }
       }
-    } catch (error) {
-      console.error('Failed to parse saved timeline', error);
-    } finally {
-      setIsHydrated(true);
-    }
+    };
+
+    hydrate();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !isHydrated) return;
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-      setStorageMessage('');
-    } catch (error) {
-      console.error('Failed to persist timeline', error);
+    const persist = async () => {
       try {
-        const lightweightEvents = events.map(({ image, ...rest }) => rest);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(lightweightEvents));
-        setStorageMessage(
-          'Storage limit reached: images will not be saved locally. Export to keep full fidelity.'
+        const metadataOnly = events.map(({ image, ...rest }) => rest);
+        await localforage.setItem(METADATA_KEY, metadataOnly);
+
+        const imageKeysToKeep = new Set(
+          events.filter((item) => item.image).map((item) => `${IMAGE_PREFIX}${item.id}`)
         );
-      } catch (secondaryError) {
-        console.error('Unable to persist even without images', secondaryError);
+
+        const storeImages = events.map((item) => {
+          const key = `${IMAGE_PREFIX}${item.id}`;
+          if (!item.image) {
+            return localforage.removeItem(key);
+          }
+          return localforage.setItem(key, item.image);
+        });
+
+        const cleanup = localforage.keys().then((keys) =>
+          Promise.all(
+            keys
+              .filter((key) => key.startsWith(IMAGE_PREFIX) && !imageKeysToKeep.has(key))
+              .map((key) => localforage.removeItem(key))
+          )
+        );
+
+        await Promise.all([...storeImages, cleanup]);
+        setStorageMessage('');
+      } catch (error) {
+        console.error('Failed to persist timeline', error);
         setStorageMessage(
-          'Unable to save timeline locally due to storage limits. Please export to retain your data.'
+          'Unable to save timeline locally. Please export to retain your data.'
         );
       }
-    }
+    };
+
+    persist();
   }, [events, isHydrated]);
 
   const sortedEvents = useMemo(
