@@ -77,10 +77,10 @@ async function extractTextFromPdf(pdfjs, file, onProgress) {
     }
   }
 
-  return pages.join('\n');
+  return pages;
 }
 
-function computeNewText(latestText, outdatedText) {
+function computeNewText(latestPages, outdatedPages) {
   const normalize = (value) => value.replace(/\s+/g, ' ').trim();
   const splitIntoSentences = (value) => {
     const normalized = normalize(value);
@@ -92,21 +92,34 @@ function computeNewText(latestText, outdatedText) {
     return sentences.map((sentence) => sentence.trim()).filter(Boolean);
   };
 
-  const latestSentences = splitIntoSentences(latestText);
   const outdatedSentences = new Set(
-    splitIntoSentences(outdatedText).map((sentence) => sentence.toLowerCase())
-  );
-  const unique = latestSentences.filter(
-    (sentence) => !outdatedSentences.has(sentence.toLowerCase())
+    outdatedPages
+      .flatMap((pageText) => splitIntoSentences(pageText))
+      .map((sentence) => sentence.toLowerCase())
   );
 
-  const seen = new Set();
-  return unique.filter((sentence) => {
-    const deduped = sentence.toLowerCase();
-    if (seen.has(deduped)) return false;
-    seen.add(deduped);
-    return true;
-  });
+  return latestPages.reduce((acc, pageText, pageIndex) => {
+    const pageSentences = splitIntoSentences(pageText);
+    const seenOnPage = new Set();
+    const uniqueOnPage = pageSentences.filter((sentence) => {
+      const deduped = sentence.toLowerCase();
+      if (outdatedSentences.has(deduped)) return false;
+      if (seenOnPage.has(deduped)) return false;
+      seenOnPage.add(deduped);
+      return true;
+    });
+
+    if (!uniqueOnPage.length) return acc;
+
+    return [
+      ...acc,
+      {
+        page: pageIndex + 1,
+        example: uniqueOnPage[0],
+        total: uniqueOnPage.length,
+      },
+    ];
+  }, []);
 }
 
 export default function PdfDiffPage() {
@@ -168,7 +181,7 @@ export default function PdfDiffPage() {
     setProgress({ latest: null, outdated: null });
 
     try {
-      const [latestText, outdatedText] = await Promise.all([
+      const [latestPages, outdatedPages] = await Promise.all([
         extractTextFromPdf(pdfjsLib, latestFile, (payload) =>
           setProgress((prev) => ({ ...prev, latest: payload }))
         ),
@@ -178,10 +191,10 @@ export default function PdfDiffPage() {
       ]);
 
       setStatus('Computing differences...');
-      const uniqueText = computeNewText(latestText, outdatedText);
-      setDifferences(uniqueText);
+      const uniqueByPage = computeNewText(latestPages, outdatedPages);
+      setDifferences(uniqueByPage);
       setStatus(
-        uniqueText.length ? 'Differences ready' : 'No new text detected'
+        uniqueByPage.length ? 'Differences ready' : 'No new text detected'
       );
     } catch (err) {
       setError('We couldn’t process those PDFs. Please try different files.');
@@ -196,7 +209,14 @@ export default function PdfDiffPage() {
     const header = 'PDF Diff Export';
     const timestamp = new Date().toISOString();
     const contents = differences.length
-      ? differences.map((item, index) => `${index + 1}. ${item}`).join('\n\n')
+      ? differences
+          .map(
+            ({ page, total, example }) =>
+              `Page ${page}: ${total} new sentence${
+                total === 1 ? '' : 's'
+              }. Example: ${example}`
+          )
+          .join('\n\n')
       : 'No new text detected in the latest PDF.';
 
     const blob = new Blob(
@@ -378,7 +398,8 @@ export default function PdfDiffPage() {
           <div className={styles.resultsBox}>
             <div className={styles.ctaRow}>
               <p className={styles.muted}>
-                {differences.length} new sentences detected
+                New text detected on {differences.length} page
+                {differences.length === 1 ? '' : 's'}
               </p>
               <button
                 type='button'
@@ -389,10 +410,15 @@ export default function PdfDiffPage() {
               </button>
             </div>
             <ol className={styles.diffList}>
-              {differences.map((item, index) => (
-                <li key={item + index}>
-                  <span className={styles.tag}>{index + 1}</span>
-                  <p>{item}</p>
+              {differences.map(({ page, example, total }) => (
+                <li key={`page-${page}`}>
+                  <span className={styles.tag}>Page {page}</span>
+                  <div className={styles.resultText}>
+                    <p className={styles.muted}>
+                      {total} new difference{total === 1 ? '' : 's'} on this page
+                    </p>
+                    <p>{example}</p>
+                  </div>
                 </li>
               ))}
             </ol>
