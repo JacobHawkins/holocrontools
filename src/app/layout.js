@@ -15,6 +15,9 @@ export const metadata = {
   title: "Holocrontools | Local-first tools",
   description:
     "Static, local-first tooling for PDF diffing, timeline building, and portable save files—no databases required.",
+  icons: {
+    icon: "/holocronTools.svg",
+  },
 };
 
 export default function RootLayout({ children }) {

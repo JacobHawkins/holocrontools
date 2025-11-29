@@ -80,33 +80,64 @@ async function extractTextFromPdf(pdfjs, file, onProgress) {
   return pages;
 }
 
+const normalizeText = (value) => value.replace(/\s+/g, ' ').trim();
+
+function splitIntoLines(value) {
+  return value
+    .split('\n')
+    .map((line) => normalizeText(line))
+    .filter(Boolean);
+}
+
+function levenshteinDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const dp = Array.from({ length: rows }, () => new Array(cols).fill(0));
+
+  for (let i = 0; i < rows; i += 1) dp[i][0] = i;
+  for (let j = 0; j < cols; j += 1) dp[0][j] = j;
+
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return dp[a.length][b.length];
+}
+
+function isSimilarText(a, b, threshold = 0.9) {
+  const normalizedA = normalizeText(a);
+  const normalizedB = normalizeText(b);
+  if (!normalizedA || !normalizedB) return normalizedA === normalizedB;
+
+  const distance = levenshteinDistance(normalizedA, normalizedB);
+  const maxLength = Math.max(normalizedA.length, normalizedB.length) || 1;
+  const similarity = 1 - distance / maxLength;
+
+  return similarity >= threshold;
+}
+
 function computeNewText(latestPages, outdatedPages) {
-  const normalize = (value) => value.replace(/\s+/g, ' ').trim();
-  const splitIntoSentences = (value) => {
-    const normalized = normalize(value);
-    if (!normalized) return [];
-
-    const sentences = normalized.match(/[^.!?]+[.!?]?/g);
-    if (!sentences) return [normalized];
-
-    return sentences.map((sentence) => sentence.trim()).filter(Boolean);
-  };
-
-  const outdatedSentences = new Set(
-    outdatedPages
-      .flatMap((pageText) => splitIntoSentences(pageText))
-      .map((sentence) => sentence.toLowerCase())
-  );
-
   return latestPages.reduce((acc, pageText, pageIndex) => {
-    const pageSentences = splitIntoSentences(pageText);
+    const latestLines = splitIntoLines(pageText);
+    const outdatedLines = splitIntoLines(outdatedPages[pageIndex] || '');
     const seenOnPage = new Set();
-    const uniqueOnPage = pageSentences.filter((sentence) => {
-      const deduped = sentence.toLowerCase();
-      if (outdatedSentences.has(deduped)) return false;
+
+    const uniqueOnPage = latestLines.filter((line) => {
+      const deduped = normalizeText(line).toLowerCase();
       if (seenOnPage.has(deduped)) return false;
       seenOnPage.add(deduped);
-      return true;
+
+      if (!outdatedLines.length) return true;
+      return !outdatedLines.some((outdatedLine) =>
+        isSimilarText(line, outdatedLine)
+      );
     });
 
     if (!uniqueOnPage.length) return acc;
