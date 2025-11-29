@@ -49,33 +49,48 @@ async function extractTextFromPdf(pdfjs, file, onProgress) {
       onProgress({ loaded, total, phase: 'loading' });
   }
   const pdf = await loadingTask.promise;
-  let text = '';
+  const pages = [];
 
   for (let pageIndex = 1; pageIndex <= pdf.numPages; pageIndex += 1) {
     const page = await pdf.getPage(pageIndex);
     const content = await page.getTextContent();
-    text += `${content.items.map((item) => item.str).join(' ')}\n`;
+
+    const lines = [];
+    let currentLine = [];
+
+    content.items.forEach((item, idx) => {
+      const normalized = item.str.replace(/\s+/g, ' ').trim();
+      if (!normalized) return;
+      currentLine.push(normalized);
+
+      // pdf.js marks the end of a visual line with hasEOL. If the last item on
+      // the page never sets it, push whatever we have when we reach the end.
+      if (item.hasEOL || idx === content.items.length - 1) {
+        lines.push(currentLine.join(' '));
+        currentLine = [];
+      }
+    });
+
+    pages.push(lines.join('\n'));
     if (onProgress) {
       onProgress({ loaded: pageIndex, total: pdf.numPages, phase: 'pages' });
     }
   }
 
-  return text;
+  return pages.join('\n');
 }
 
 function computeNewText(latestText, outdatedText) {
   const normalize = (value) => value.replace(/\s+/g, ' ').trim();
-  const splitIntoSentences = (value) =>
+  const splitIntoLines = (value) =>
     value
-      .split(/(?<=[.!?])\s+|\n+/)
+      .split(/\n+/)
       .map(normalize)
       .filter(Boolean);
 
-  const latestSentences = splitIntoSentences(latestText);
-  const outdatedSentences = new Set(splitIntoSentences(outdatedText));
-  const unique = latestSentences.filter(
-    (sentence) => !outdatedSentences.has(sentence)
-  );
+  const latestLines = splitIntoLines(latestText);
+  const outdatedLines = new Set(splitIntoLines(outdatedText));
+  const unique = latestLines.filter((line) => !outdatedLines.has(line));
 
   const seen = new Set();
   return unique.filter((entry) => {
