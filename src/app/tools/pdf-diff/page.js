@@ -12,13 +12,25 @@ import {
   ShieldCheck,
   Upload,
 } from 'lucide-react';
-import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 import styles from './pdf.module.css';
+import { useEffectOnce } from './use-effect-once';
 
-GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-);
+let pdfjsLibPromise;
+
+async function loadPdfJs() {
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = import('pdfjs-dist/legacy/build/pdf').then((module) => {
+      const pdfjs = module.default ?? module;
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url
+      ).toString();
+      return pdfjs;
+    });
+  }
+
+  return pdfjsLibPromise;
+}
 
 const formatDuration = (ms) => {
   if (!ms || Number.isNaN(ms)) return '0s';
@@ -29,9 +41,9 @@ const formatDuration = (ms) => {
   return `${minutes}m ${remainingSeconds}s`;
 };
 
-async function extractTextFromPdf(file, onProgress) {
+async function extractTextFromPdf(pdfjs, file, onProgress) {
   const buffer = await file.arrayBuffer();
-  const loadingTask = getDocument({ data: buffer });
+  const loadingTask = pdfjs.getDocument({ data: buffer });
   if (onProgress) {
     loadingTask.onProgress = ({ loaded, total }) =>
       onProgress({ loaded, total, phase: 'loading' });
@@ -83,6 +95,20 @@ export default function PdfDiffPage() {
   const [error, setError] = useState(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [progress, setProgress] = useState({ latest: null, outdated: null });
+  const [pdfjsLib, setPdfjsLib] = useState(null);
+
+  useEffectOnce(() => {
+    loadPdfJs()
+      .then((lib) => {
+        setPdfjsLib(lib);
+      })
+      .catch((err) => {
+        console.error('Failed to load pdfjs', err);
+        setError(
+          'PDF engine failed to load. Please refresh and try again, or use a different browser.'
+        );
+      });
+  });
 
   useEffect(() => {
     let timer;
@@ -111,7 +137,7 @@ export default function PdfDiffPage() {
   }, [elapsedMs, progress.latest, progress.outdated]);
 
   const handleCompare = async () => {
-    if (!latestFile || !outdatedFile) return;
+    if (!latestFile || !outdatedFile || !pdfjsLib) return;
     setError(null);
     setIsProcessing(true);
     setStatus('Extracting text...');
@@ -120,10 +146,10 @@ export default function PdfDiffPage() {
 
     try {
       const [latestText, outdatedText] = await Promise.all([
-        extractTextFromPdf(latestFile, (payload) =>
+        extractTextFromPdf(pdfjsLib, latestFile, (payload) =>
           setProgress((prev) => ({ ...prev, latest: payload }))
         ),
-        extractTextFromPdf(outdatedFile, (payload) =>
+        extractTextFromPdf(pdfjsLib, outdatedFile, (payload) =>
           setProgress((prev) => ({ ...prev, outdated: payload }))
         ),
       ]);
@@ -162,7 +188,7 @@ export default function PdfDiffPage() {
     saveAs(blob, 'pdf-text-diff.txt');
   };
 
-  const canCompare = latestFile && outdatedFile && !isProcessing;
+  const canCompare = latestFile && outdatedFile && !isProcessing && !!pdfjsLib;
 
   return (
     <main className={styles.page}>
