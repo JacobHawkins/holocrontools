@@ -13,10 +13,12 @@ import {
   Upload,
 } from 'lucide-react';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs';
 import styles from './pdf.module.css';
 
-GlobalWorkerOptions.workerSrc = pdfWorker;
+GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+);
 
 const formatDuration = (ms) => {
   if (!ms || Number.isNaN(ms)) return '0s';
