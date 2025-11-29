@@ -82,19 +82,27 @@ async function extractTextFromPdf(pdfjs, file, onProgress) {
 
 function computeNewText(latestText, outdatedText) {
   const normalize = (value) => value.replace(/\s+/g, ' ').trim();
-  const splitIntoLines = (value) =>
-    value
-      .split(/\n+/)
-      .map(normalize)
-      .filter(Boolean);
+  const splitIntoSentences = (value) => {
+    const normalized = normalize(value);
+    if (!normalized) return [];
 
-  const latestLines = splitIntoLines(latestText);
-  const outdatedLines = new Set(splitIntoLines(outdatedText));
-  const unique = latestLines.filter((line) => !outdatedLines.has(line));
+    const sentences = normalized.match(/[^.!?]+[.!?]?/g);
+    if (!sentences) return [normalized];
+
+    return sentences.map((sentence) => sentence.trim()).filter(Boolean);
+  };
+
+  const latestSentences = splitIntoSentences(latestText);
+  const outdatedSentences = new Set(
+    splitIntoSentences(outdatedText).map((sentence) => sentence.toLowerCase())
+  );
+  const unique = latestSentences.filter(
+    (sentence) => !outdatedSentences.has(sentence.toLowerCase())
+  );
 
   const seen = new Set();
-  return unique.filter((entry) => {
-    const deduped = entry.toLowerCase();
+  return unique.filter((sentence) => {
+    const deduped = sentence.toLowerCase();
     if (seen.has(deduped)) return false;
     seen.add(deduped);
     return true;
