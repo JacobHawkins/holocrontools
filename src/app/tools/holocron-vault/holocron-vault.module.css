@@ -17,7 +17,6 @@
 
 .hero {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
   gap: 18px;
   align-items: center;
 }
@@ -267,11 +266,5 @@
   }
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 900px) {
-  .hero {
-    grid-template-columns: 1fr;
   }
 }

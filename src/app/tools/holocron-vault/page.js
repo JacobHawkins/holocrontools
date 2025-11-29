@@ -1,5 +1,12 @@
-import { Archive, Import, ShieldCheck, Upload } from "lucide-react";
-import styles from "../tool-page.module.css";
+import {
+  Archive,
+  Check,
+  Clock,
+  Download,
+  ShieldCheck,
+  Upload,
+} from 'lucide-react';
+import styles from './holocron-vault.module.css';
 
 export default function HolocronVaultPage() {
   return (
@@ -7,69 +14,48 @@ export default function HolocronVaultPage() {
       <section className={styles.hero}>
         <div className={styles.heroText}>
           <p className={styles.pill}>Holocron Vault</p>
-          <h1>Manage the files that power your local tools</h1>
+          <h1>Simple guidance for your exported files</h1>
           <p>
-            Import exports from other Holocrontools screens, clean up local
-            storage, and keep your offline workspace organized.
+            This page explains where your downloads land and how to keep them
+            organized. Everything saves to your default download folder so you
+            can stay in control.
           </p>
         </div>
         <div className={styles.panel}>
-          <h3>Planned experience</h3>
-          <p>
-            A single place to see your saved files, verify integrity, and
-            rehydrate any tool with a click.
-          </p>
-          <div className={styles.pillRow}>
-            <span className={styles.pill}>Local inventory</span>
-            <span className={styles.pill}>Quick restore</span>
-            <span className={styles.pill}>Portable backups</span>
+          <div className={styles.cardHeader}>
+            <div>
+              <p className={styles.muted}>Vault usage</p>
+            </div>
+            <Download />
           </div>
-        </div>
-      </section>
-
-      <section className={styles.panel}>
-        <h2>Roadmap notes</h2>
-        <div className={styles.list}>
-          <article className={styles.card}>
-            <Upload />
-            <div>
-              <h3>Unified import</h3>
-              <p>
-                Drag-and-drop saved JSON files to repopulate any Holocrontools
-                experience instantly.
-              </p>
+          <p className={styles.muted}>
+            All exports from Holocrontools save directly to your browser&apos;s
+            default download directory. Use these notes as your quick checklist
+            for sharing or archiving.
+          </p>
+          <div className={styles.metricRow}>
+            <div className={styles.metric}>
+              <Clock size={16} />
+              <div>
+                <p className={styles.muted}>Location</p>
+                <strong>~/Downloads</strong>
+              </div>
             </div>
-          </article>
-          <article className={styles.card}>
-            <Archive />
-            <div>
-              <h3>Local housekeeping</h3>
-              <p>
-                See how much space each tool is using in local storage and clear
-                entries you no longer need.
-              </p>
+            <div className={styles.metric}>
+              <ShieldCheck size={16} />
+              <div>
+                <p className={styles.muted}>Privacy</p>
+                <strong>Stays on-device</strong>
+              </div>
             </div>
-          </article>
-          <article className={styles.card}>
-            <ShieldCheck />
-            <div>
-              <h3>Private by default</h3>
-              <p>
-                Nothing leaves your device unless you choose. Exports are yours
-                to share, remix, or delete.
-              </p>
+            <div className={styles.metric}>
+              <Check size={16} />
+              <div>
+                <p className={styles.muted}>Ready to share</p>
+                <strong>.txt / .json / .pdf</strong>
+              </div>
             </div>
-          </article>
-          <article className={styles.card}>
-            <Import />
-            <div>
-              <h3>Inter-tool awareness</h3>
-              <p>
-                Move assets between tools—PDF reports into the vault, timeline
-                files back into the builder—without a server in sight.
-              </p>
-            </div>
-          </article>
+          </div>
         </div>
       </section>
     </main>
