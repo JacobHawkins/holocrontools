@@ -129,15 +129,48 @@ function computeNewText(latestPages, outdatedPages) {
     const outdatedLines = splitIntoLines(outdatedPages[pageIndex] || '');
     const seenOnPage = new Set();
 
+    // Track which outdated lines have already been paired to avoid
+    // undercounting or overcounting when sentences repeat.
+    const usedOutdated = new Set();
+
     const uniqueOnPage = latestLines.filter((line) => {
       const deduped = normalizeText(line).toLowerCase();
       if (seenOnPage.has(deduped)) return false;
       seenOnPage.add(deduped);
 
       if (!outdatedLines.length) return true;
-      return !outdatedLines.some((outdatedLine) =>
-        isSimilarText(line, outdatedLine)
-      );
+
+      // Pair each line with its best match to avoid a single similar
+      // sentence suppressing multiple differences on the page.
+      let bestMatchIndex = -1;
+      let bestSimilarity = 0;
+
+      outdatedLines.forEach((outdatedLine, idx) => {
+        if (usedOutdated.has(idx)) return;
+        const normalizedOutdated = normalizeText(outdatedLine);
+        const normalizedLatest = normalizeText(line);
+        if (!normalizedLatest || !normalizedOutdated) return;
+        const distance = levenshteinDistance(
+          normalizedLatest,
+          normalizedOutdated
+        );
+        const maxLength = Math.max(
+          normalizedLatest.length,
+          normalizedOutdated.length,
+          1
+        );
+        const similarity = 1 - distance / maxLength;
+        if (similarity > bestSimilarity) {
+          bestSimilarity = similarity;
+          bestMatchIndex = idx;
+        }
+      });
+
+      // Require a stronger similarity score before treating lines as the same
+      // to avoid missing small but meaningful edits.
+      const isMatch = bestSimilarity >= 0.94;
+      if (isMatch && bestMatchIndex !== -1) usedOutdated.add(bestMatchIndex);
+      return !isMatch;
     });
 
     if (!uniqueOnPage.length) return acc;
